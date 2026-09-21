@@ -67,11 +67,17 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3 mb-4">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center fw-bold fs-4" href="#">
-                <i class="bi bi-box-seam-fill me-2 fs-3 text-warning"></i>
-                ระบบจัดการสินค้า (Product Management)
-            </a>
-            <span class="badge bg-light text-dark px-3 py-2 rounded-pill fw-normal">
+            <div class="d-flex align-items-center">
+                <!-- ปุ่มย้อนกลับบน Navbar -->
+                <a href="products.html" class="btn btn-outline-light btn-sm me-3" title="ย้อนกลับหน้ารายการสินค้า">
+                    <i class="bi bi-arrow-left fs-5"></i>
+                </a>
+                <a class="navbar-brand d-flex align-items-center fw-bold fs-4 m-0" href="#">
+                    <i class="bi bi-box-seam-fill me-2 fs-3 text-warning"></i>
+                    ระบบจัดการสินค้า (Product Management)
+                </a>
+            </div>
+            <span class="badge bg-light text-dark px-3 py-2 rounded-pill fw-normal d-none d-md-inline-block">
                 <i class="bi bi-hdd-network me-1 text-primary"></i> Server-Side Processing (PHP / API)
             </span>
         </div>
@@ -182,6 +188,10 @@
 
                             <!-- Action Buttons -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <!-- ปุ่มย้อนกลับหน้าฟอร์ม -->
+                                <a href="products.html" class="btn btn-secondary px-4 me-md-auto">
+                                    <i class="bi bi-arrow-left me-1"></i>ย้อนกลับ
+                                </a>
                                 <button type="button" class="btn btn-outline-secondary px-4 me-md-2" id="btnReset">
                                     <i class="bi bi-arrow-counterclockwise me-1"></i>ล้างข้อมูล / เพิ่มใหม่
                                 </button>
@@ -215,9 +225,9 @@
                         <!-- Content Injected via JS -->
                     </div>
 
-                    <button type="button" class="btn btn-success px-5 py-2 rounded-3 fw-medium" data-bs-dismiss="modal" id="modalOkBtn">
-                        <i class="bi bi-check-lg me-1"></i>ตกลง (OK)
-                    </button>
+                    <a href="index.html" class="btn btn-primary px-4 py-2 rounded-3 fw-medium">
+                        <i class="bi bi-list-ul me-1"></i>ไปหน้ารายการสินค้า
+                    </a>
                     <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3 fw-medium ms-2" data-bs-dismiss="modal" id="modalResetBtn">
                         <i class="bi bi-plus-lg me-1"></i>เพิ่มสินค้าใหม่
                     </button>
@@ -314,15 +324,14 @@
       };
     </script>
 
-   <script src="js/form_template_reusable.js"></script>
+    <script src="js/form_template_reusable.js"></script>
     <script src="js/loaddata.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-        loadSelectOptions('api/categories', 'catId', '-- เลือก Category --');
-        loadSelectOptions('api/suppliers', 'supplierId', '-- เลือก Suppliers --');
-
-    });
+            loadSelectOptions('api/categories', 'catId', '-- เลือก Category --');
+            loadSelectOptions('api/suppliers', 'supplierId', '-- เลือก Suppliers --');
+        });
     </script>
 
 </body>
