@@ -18,15 +18,17 @@ require_once __DIR__ . '/core/Response.php';
 require_once __DIR__ . '/core/Router.php';
 
 // --------- โหลด controller ----------
-// ทั้งหมดที่อยู่ในโฟลเดอร์ controllers/ โดยสร้างเป็นชื่อเดียวกับชื่อไฟล์ controller เช่น CategoryController ในโฟลเดอร์ controllers/CategoryController.ph
 require_once __DIR__ . '/controllers/CategoryController.php';
 require_once __DIR__ . '/controllers/SupplierController.php';
+// 1. เพิ่มrequire โหลด ProductController
+require_once __DIR__ . '/controllers/ProductController.php';
 
 try {
     // ---------- สร้าง instance ของ controller ----------
-    // โดยสร้างเป็นชื่อเดียวกับชื่อไฟล์ controller เช่น CategoryController ในโฟลเดอร์ controllers/CategoryController.php
     $categoryController = new CategoryController($conn);
     $supplierController = new SupplierController($conn);
+    // 2. สร้าง instance ของ ProductController
+    $productController  = new ProductController($conn);
 
     // ---------- ลงทะเบียน Route ทั้งหมดของระบบไว้ที่เดียว ----------
     $router = new Router();
@@ -39,6 +41,13 @@ try {
     $router->get('/categories', [$categoryController, 'index']);
     $router->get('/categories/{id}', [$categoryController, 'show']);
 
+    // 3. เพิ่ม Route สำหรับ Products (Full CRUD)
+    $router->get('/products', [$productController, 'index']);          // อ่านทั้งหมด / ค้นหาผ่าน ?q=keyword
+    $router->get('/products/{id}', [$productController, 'show']);      // อ่านสินค้าตาม ID
+    $router->post('/products', [$productController, 'store']);        // เพิ่มสินค้าใหม่
+    $router->put('/products/{id}', [$productController, 'update']);     // แก้ไขสินค้า
+    $router->delete('/products/{id}', [$productController, 'destroy']); // ลบสินค้า
+
     // ---------- ดึง path จริงจาก query string ที่ .htaccess ส่งมาให้ (__route) ----------
     $requestPath    = $_GET['__route'] ?? '';
     $requestMethod  = $_SERVER['REQUEST_METHOD'];
@@ -46,5 +55,5 @@ try {
     $router->dispatch($requestMethod, $requestPath);
 
 } catch (Throwable $e) {
-    Response::error('เกิดข้อผิดพลาดที่ไม่คาดคิดภายในระบบ', 500);
+    Response::error('เกิดข้อผิดพลาดที่ไม่คาดคิดภายในระบบ: ' . $e->getMessage(), 500);
 }
