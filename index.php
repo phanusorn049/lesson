@@ -12,8 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// ---------- เชื่อมต่อฐานข้อมูล ----------
-require_once __DIR__ . '/../inc/ConnDB.php';
+// ---------- เชื่อมต่อฐานข้อมูล (สั้นลง ไม่ต้องถอยหลังโฟลเดอร์) ----------
+require_once __DIR__ . '/inc/ConnDB.php';
 
 // ---------- โหลดคลาสหลัก ----------
 require_once __DIR__ . '/core/Response.php';
@@ -25,47 +25,37 @@ require_once __DIR__ . '/controllers/SupplierController.php';
 require_once __DIR__ . '/controllers/ProductController.php';
 
 try {
-    // ---------- สร้าง instance ของ controller ----------
     $categoryController = new CategoryController($conn);
     $supplierController = new SupplierController($conn);
     $productController  = new ProductController($conn);
 
-    // ---------- ลงทะเบียน Route ทั้งหมดของระบบไว้ที่เดียว ----------
     $router = new Router();
 
-    // Suppliers (Read-only ณ ตอนนี้)
+    // ลงทะเบียน Route ปกติ
     $router->get('/suppliers', [$supplierController, 'index']);
     $router->get('/suppliers/{id}', [$supplierController, 'show']);
-
-    // Categories (Read-only ณ ตอนนี้)
     $router->get('/categories', [$categoryController, 'index']);
     $router->get('/categories/{id}', [$categoryController, 'show']);
+    $router->get('/products', [$productController, 'index']);
+    $router->get('/products/{id}', [$productController, 'show']);
+    $router->post('/products', [$productController, 'store']);
+    $router->put('/products/{id}', [$productController, 'update']);
+    $router->delete('/products/{id}', [$productController, 'destroy']);
 
-    // Products (Full CRUD)
-    $router->get('/products', [$productController, 'index']);          // อ่านทั้งหมด / ค้นหาผ่าน ?q=keyword
-    $router->get('/products/{id}', [$productController, 'show']);      // อ่านสินค้าตาม ID
-    $router->post('/products', [$productController, 'store']);         // เพิ่มสินค้าใหม่
-    $router->put('/products/{id}', [$productController, 'update']);     // แก้ไขสินค้า
-    $router->delete('/products/{id}', [$productController, 'destroy']); // ลบสินค้า
-
-    // ---------- จัดการ URL Routing ให้แม่นยำยิ่งขึ้น ----------
+    // ---------- จัดการ URL Routing ----------
     $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $requestMethod = $_SERVER['REQUEST_METHOD'];
 
-    // ปรับปรุงการตัด Path ป้องกันปัญหาเส้นทางเพี้ยน
     $requestPath = str_replace('/index.php', '', $requestUri);
     
-    // ถ้ามีคำว่า /api นำหน้า ให้ตัดออกให้เหลือเฉพาะ Endpoint จริง
     if (strpos($requestPath, '/api') === 0) {
         $requestPath = substr($requestPath, 4);
     }
 
-    // ถ้า $requestPath เป็นค่าว่าง ให้กำหนดเป็น /
     if (empty($requestPath) || $requestPath === '') {
         $requestPath = '/';
     }
 
-    // ส่งเข้า Router
     $router->dispatch($requestMethod, $requestPath);
 
 } catch (Throwable $e) {
