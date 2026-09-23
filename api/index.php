@@ -20,7 +20,7 @@ require_once __DIR__ . '/core/Router.php';
 // --------- โหลด controller ----------
 require_once __DIR__ . '/controllers/CategoryController.php';
 require_once __DIR__ . '/controllers/SupplierController.php';
-// 1. เพิ่มrequire โหลด ProductController
+// 1. เพิ่ม require โหลด ProductController
 require_once __DIR__ . '/controllers/ProductController.php';
 
 try {
@@ -49,12 +49,17 @@ try {
     $router->delete('/products/{id}', [$productController, 'destroy']); // ลบสินค้า
 
     // ---------- จัดการ URL Routing ให้รองรับทั้ง Local และ Railway ----------
-    // 1. ดึง path จาก REQUEST_URI (ฟังก์ชันนี้จะตัด Query String เช่น ?q=... ทิ้งให้อัตโนมัติ)
+    // 1. ดึง path จาก REQUEST_URI (ตัด Query String เช่น ?q=... ทิ้งให้อัตโนมัติ)
     $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $requestMethod = $_SERVER['REQUEST_METHOD'];
 
-    // 2. ลบ Prefix /api ออก เพื่อให้เหลือแค่เช่น /products (ตรงกับที่ลงทะเบียน Route ไว้)
-    $requestPath = preg_replace('#^/api#', '', $requestUri);
+    // 2. ลบ Prefix /api และ /index.php ออก เพื่อให้เหลือเฉพาะ Route หลัก เช่น /products
+    $requestPath = preg_replace('#^(/api)?(/index\.php)?#', '', $requestUri);
+
+    // ถ้า $requestPath เป็นค่าว่าง ให้กำหนดเป็น /
+    if (empty($requestPath)) {
+        $requestPath = '/';
+    }
 
     // 3. ส่งเข้า Router
     $router->dispatch($requestMethod, $requestPath);
