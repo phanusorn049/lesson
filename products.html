@@ -140,14 +140,14 @@
             });
         });
 
-        // ดึงรายการสินค้า
+        // ดึงรายการสินค้า (แก้ไข URL ให้ขึ้นต้นด้วย /api/ เสมอเพื่อความแม่นยำ)
         function fetchProducts() {
             const keyword = document.getElementById('searchInput').value.trim();
             const tbody = document.getElementById('productTableBody');
             
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังดึงข้อมูลสินค้า...</td></tr>';
 
-            fetch(`api/products?q=${encodeURIComponent(keyword)}`)
+            fetch(`/api/products?q=${encodeURIComponent(keyword)}`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error(`HTTP Status: ${res.status}`);
@@ -209,7 +209,8 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            fetch(`api/products/${id}`, {
+            // แก้ไข URL ให้ขึ้นต้นด้วย /api/ สำหรับคำขอ DELETE ด้วยเช่นกัน
+            fetch(`/api/products/${id}`, {
                 method: 'DELETE'
             })
             .then(res => {
