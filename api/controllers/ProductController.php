@@ -8,12 +8,31 @@ class ProductController
         $this->conn = $conn;
     }
 
-    /** 1. GET /api/products — ดึงรายการสินค้าทั้งหมด หรือ ค้นหาผ่าน ?q=keyword */
+    /** 1. GET /api/products — ดึงรายการสินค้าแบบแบ่งหน้า Pagination หรือ ค้นหาผ่าน ?q=keyword */
     public function index(): void
     {
         try {
             $keyword = isset($_GET['q']) ? trim($_GET['q']) : '';
+            $page    = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+            $limit   = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 10;
+            $offset  = ($page - 1) * $limit;
 
+            // 1. นัยจำนวนทั้งหมดเพื่อคำนวณ Pagination
+            $countSql = "SELECT COUNT(*) FROM tb_products p";
+            if (!empty($keyword)) {
+                $countSql .= " WHERE p.c_ProductName LIKE :keyword OR p.i_ProductID = :id_keyword";
+            }
+
+            $countStmt = $this->conn->prepare($countSql);
+            if (!empty($keyword)) {
+                $countStmt->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
+                $countStmt->bindValue(':id_keyword', is_numeric($keyword) ? (int)$keyword : 0, PDO::PARAM_INT);
+            }
+            $countStmt->execute();
+            $totalItems = (int)$countStmt->fetchColumn();
+            $totalPages = ceil($totalItems / $limit);
+
+            // 2. ดึงข้อมูลแบบ Pagination
             $sql = "SELECT 
                         p.i_ProductID AS ProductID,
                         p.c_ProductName AS ProductName,
@@ -28,23 +47,31 @@ class ProductController
                     LEFT JOIN tb_suppliers s ON p.i_SupplierID = s.i_SupplierID";
 
             if (!empty($keyword)) {
-                $sql .= " WHERE p.c_ProductName LIKE :keyword 
-                           OR p.i_ProductID = :id_keyword
-                        ORDER BY p.i_ProductID DESC 
-                        LIMIT 20";
-
-                $stmt = $this->conn->prepare($sql);
-                $stmt->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
-                $stmt->bindValue(':id_keyword', is_numeric($keyword) ? (int)$keyword : 0, PDO::PARAM_INT);
-            } else {
-                $sql .= " ORDER BY p.i_ProductID DESC LIMIT 20";
-                $stmt = $this->conn->prepare($sql);
+                $sql .= " WHERE p.c_ProductName LIKE :keyword OR p.i_ProductID = :id_keyword";
             }
 
-            $stmt->execute();
-            $products = $stmt->fetchAll();
+            $sql .= " ORDER BY p.i_ProductID DESC LIMIT :limit OFFSET :offset";
 
-            Response::success($products);
+            $stmt = $this->conn->prepare($sql);
+            if (!empty($keyword)) {
+                $stmt->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
+                $stmt->bindValue(':id_keyword', is_numeric($keyword) ? (int)$keyword : 0, PDO::PARAM_INT);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // ส่งข้อมูลกลับรวม Pagination Metadata
+            Response::success([
+                'items' => $products,
+                'pagination' => [
+                    'current_page' => $page,
+                    'total_pages'  => $totalPages,
+                    'total_items'  => $totalItems,
+                    'per_page'     => $limit
+                ]
+            ]);
         } catch (PDOException $e) {
             Response::error('ไม่สามารถดึงข้อมูลสินค้าได้: ' . $e->getMessage(), 500);
         }
@@ -72,7 +99,7 @@ class ProductController
             $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
             $stmt->execute();
 
-            $product = $stmt->fetch();
+            $product = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$product) {
                 Response::notFound('ไม่พบข้อมูลสินค้ารหัสนี้');
                 return;
@@ -101,8 +128,8 @@ class ProductController
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
                 ':name'     => $data['ProductName'] ?? '',
-                ':supplier' => $data['SupplierID'] ?? null,
-                ':cat'      => $data['CatID'] ?? null,
+                ':supplier' => !empty($data['SupplierID']) ? $data['SupplierID'] : null,
+                ':cat'      => !empty($data['CatID']) ? $data['CatID'] : null,
                 ':unit'     => $data['Unit'] ?? '',
                 ':price'    => $data['Price'] ?? 0
             ]);
@@ -136,8 +163,8 @@ class ProductController
             $stmt->execute([
                 ':id'       => (int)$id,
                 ':name'     => $data['ProductName'] ?? '',
-                ':supplier' => $data['SupplierID'] ?? null,
-                ':cat'      => $data['CatID'] ?? null,
+                ':supplier' => !empty($data['SupplierID']) ? $data['SupplierID'] : null,
+                ':cat'      => !empty($data['CatID']) ? $data['CatID'] : null,
                 ':unit'     => $data['Unit'] ?? '',
                 ':price'    => $data['Price'] ?? 0
             ]);
