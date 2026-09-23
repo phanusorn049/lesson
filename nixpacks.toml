@@ -5,4 +5,4 @@ providers = ["php"]
 nixPkgs = ["php82", "php82Extensions.pdo_mysql"]
 
 [start]
-cmd = "php -S 0.0.0.0:$PORT -t . api/index.php"
+cmd = "php -S 0.0.0.0:$PORT -t ."
