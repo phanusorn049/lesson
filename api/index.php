@@ -48,10 +48,15 @@ try {
     $router->put('/products/{id}', [$productController, 'update']);     // แก้ไขสินค้า
     $router->delete('/products/{id}', [$productController, 'destroy']); // ลบสินค้า
 
-    // ---------- ดึง path จริงจาก query string ที่ .htaccess ส่งมาให้ (__route) ----------
-    $requestPath    = $_GET['__route'] ?? '';
-    $requestMethod  = $_SERVER['REQUEST_METHOD'];
+    // ---------- จัดการ URL Routing ให้รองรับทั้ง Local และ Railway ----------
+    // 1. ดึง path จาก REQUEST_URI (ฟังก์ชันนี้จะตัด Query String เช่น ?q=... ทิ้งให้อัตโนมัติ)
+    $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $requestMethod = $_SERVER['REQUEST_METHOD'];
 
+    // 2. ลบ Prefix /api ออก เพื่อให้เหลือแค่เช่น /products (ตรงกับที่ลงทะเบียน Route ไว้)
+    $requestPath = preg_replace('#^/api#', '', $requestUri);
+
+    // 3. ส่งเข้า Router
     $router->dispatch($requestMethod, $requestPath);
 
 } catch (Throwable $e) {
