@@ -5,8 +5,7 @@
 :8080 {
     root * .
 
-    # ใช้ Unix Socket ที่ PHP-FPM เตรียมไว้ให้โดยอัตโนมัติ
-    php_fastcgi unix//var/run/php-fpm.sock
+    php_fastcgi 127.0.0.1:9001
 
     file_server
 }
