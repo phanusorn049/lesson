@@ -2,12 +2,12 @@
     admin off
 }
 
-:${PORT} {
+:8080 {
     root * .
 
-    # ถ้าเป็นไฟล์หรือโฟลเดอร์ที่มีอยู่จริง และลงท้ายด้วย .php ให้ส่งให้ PHP-FPM ประมวลผล
+    # ส่งไฟล์ .php ไปให้ PHP-FPM ประมวลผล
     php_fastcgi localhost:9000
 
-    # บริการ Static Files ทั่วไป (HTML, CSS, JS, รูปภาพ)
+    # บริการ Static Files ทั่วไป
     file_server
 }
