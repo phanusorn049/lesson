@@ -201,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modalResetBtn.addEventListener('click', resetFormToCreateMode);
     }
 
+    // --- ส่วนแก้ไข: Submit Form แบบ RESTful Support ---
     form.addEventListener('submit', async function (event) {
         event.preventDefault();
         clearServerErrors();
@@ -215,12 +216,30 @@ document.addEventListener('DOMContentLoaded', function () {
         state.isSubmitting = true;
         updateSubmitButton({ loading: true, mode: state.isUpdateMode });
 
+        // แปลง Form เป็น JSON payload
         const formData = new FormData(form);
+        const payloadData = Object.fromEntries(formData.entries());
+
+        // กำหนด URL และ Method ให้ตรงกับ RESTful API
+        let requestUrl = config.fetchUrl;
+        let requestMethod = 'POST';
+
+        if (state.isUpdateMode) {
+            const recordId = idInput ? idInput.value : '';
+            // ถ้ามี ID ให้ต่อท้าย Path เช่น /api/products/10 และส่งแบบ PUT
+            if (recordId) {
+                requestUrl = `${config.fetchUrl.replace(/\/$/, '')}/${recordId}`;
+            }
+            requestMethod = 'PUT';
+        }
 
         try {
-            const response = await fetch(config.fetchUrl, {
-                method: 'POST',
-                body: formData
+            const response = await fetch(requestUrl, {
+                method: requestMethod,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payloadData)
             });
 
             const result = await response.json().catch(() => null);
@@ -251,3 +270,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setCreateMode();
 });
+
+// ฟังก์ชั่นโหลด Dropdown สำหรับ Select Element
+async function loadSelectOptions(url, selectId, placeholderText) {
+    const selectEl = document.getElementById(selectId);
+    if (!selectEl) return;
+
+    try {
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || `HTTP ${response.status}`);
+        }
+
+        selectEl.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        defaultOption.textContent = placeholderText;
+        selectEl.appendChild(defaultOption);
+
+        result.data.forEach((item) => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = item.name;
+            selectEl.appendChild(opt);
+        });
+
+    } catch (error) {
+        selectEl.innerHTML = '';
+        const errOption = document.createElement('option');
+        errOption.value = '';
+        errOption.disabled = true;
+        errOption.selected = true;
+        errOption.textContent = 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่';
+        selectEl.appendChild(errOption);
+        console.error(`โหลดข้อมูลจาก ${url} ไม่สำเร็จ:`, error);
+    }
+}
