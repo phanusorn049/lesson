@@ -1,0 +1,13 @@
+{
+    admin off
+}
+
+:${PORT} {
+    root * .
+
+    # ส่งไฟล์ .php ไปให้ PHP-FPM ประมวลผล
+    php_fastcgi localhost:9000
+
+    # บริการ Static Files ทั่วไป (HTML, CSS, JS, รูปภาพ)
+    file_server
+}
