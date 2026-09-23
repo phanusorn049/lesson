@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // ---------- เชื่อมต่อฐานข้อมูล ----------
 require_once __DIR__ . '/../inc/ConnDB.php';
 
-
 // ---------- โหลดคลาสหลัก ----------
 require_once __DIR__ . '/core/Response.php';
 require_once __DIR__ . '/core/Router.php';
@@ -20,14 +19,12 @@ require_once __DIR__ . '/core/Router.php';
 // --------- โหลด controller ----------
 require_once __DIR__ . '/controllers/CategoryController.php';
 require_once __DIR__ . '/controllers/SupplierController.php';
-// 1. เพิ่ม require โหลด ProductController
 require_once __DIR__ . '/controllers/ProductController.php';
 
 try {
     // ---------- สร้าง instance ของ controller ----------
     $categoryController = new CategoryController($conn);
     $supplierController = new SupplierController($conn);
-    // 2. สร้าง instance ของ ProductController
     $productController  = new ProductController($conn);
 
     // ---------- ลงทะเบียน Route ทั้งหมดของระบบไว้ที่เดียว ----------
@@ -41,27 +38,31 @@ try {
     $router->get('/categories', [$categoryController, 'index']);
     $router->get('/categories/{id}', [$categoryController, 'show']);
 
-    // 3. เพิ่ม Route สำหรับ Products (Full CRUD)
+    // Products (Full CRUD)
     $router->get('/products', [$productController, 'index']);          // อ่านทั้งหมด / ค้นหาผ่าน ?q=keyword
     $router->get('/products/{id}', [$productController, 'show']);      // อ่านสินค้าตาม ID
-    $router->post('/products', [$productController, 'store']);        // เพิ่มสินค้าใหม่
+    $router->post('/products', [$productController, 'store']);         // เพิ่มสินค้าใหม่
     $router->put('/products/{id}', [$productController, 'update']);     // แก้ไขสินค้า
     $router->delete('/products/{id}', [$productController, 'destroy']); // ลบสินค้า
 
-    // ---------- จัดการ URL Routing ให้รองรับทั้ง Local และ Railway ----------
-    // 1. ดึง path จาก REQUEST_URI (ตัด Query String เช่น ?q=... ทิ้งให้อัตโนมัติ)
+    // ---------- จัดการ URL Routing ให้แม่นยำยิ่งขึ้น ----------
     $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $requestMethod = $_SERVER['REQUEST_METHOD'];
 
-    // 2. ลบ Prefix /api และ /index.php ออก เพื่อให้เหลือเฉพาะ Route หลัก เช่น /products
-    $requestPath = preg_replace('#^(/api)?(/index\.php)?#', '', $requestUri);
+    // ปรับปรุงการตัด Path ป้องกันปัญหาเส้นทางเพี้ยน
+    $requestPath = str_replace('/index.php', '', $requestUri);
+    
+    // ถ้ามีคำว่า /api นำหน้า ให้ตัดออกให้เหลือเฉพาะ Endpoint จริง
+    if (strpos($requestPath, '/api') === 0) {
+        $requestPath = substr($requestPath, 4);
+    }
 
     // ถ้า $requestPath เป็นค่าว่าง ให้กำหนดเป็น /
-    if (empty($requestPath)) {
+    if (empty($requestPath) || $requestPath === '') {
         $requestPath = '/';
     }
 
-    // 3. ส่งเข้า Router
+    // ส่งเข้า Router
     $router->dispatch($requestMethod, $requestPath);
 
 } catch (Throwable $e) {
