@@ -147,8 +147,8 @@
             
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังดึงข้อมูลสินค้า...</td></tr>';
 
-            // ใช้ Relative Path (ไม่มี / นำหน้า)
-            fetch(`api/products?q=${encodeURIComponent(keyword)}`)
+            // ปรับแก้ Path ให้ยิงผ่าน api/index.php/products
+            fetch(`api/index.php/products?q=${encodeURIComponent(keyword)}`)
                 .then(res => res.json())
                 .then(res => {
                     if (res.data && res.data.length > 0) {
@@ -204,8 +204,8 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            // แก้ไข Path ถอด / ด้านหน้าออกแล้ว
-            fetch(`api/products/${id}`, {
+            // ปรับแก้ Path ให้ยิงผ่าน api/index.php/products/${id}
+            fetch(`api/index.php/products/${id}`, {
                 method: 'DELETE'
             })
             .then(res => res.json())
