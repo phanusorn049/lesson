@@ -12,17 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// ---------- เชื่อมต่อฐานข้อมูล (สั้นลง ไม่ต้องถอยหลังโฟลเดอร์) ----------
+// ---------- เชื่อมต่อฐานข้อมูล ----------
 require_once __DIR__ . '/inc/ConnDB.php';
 
 // ---------- โหลดคลาสหลัก ----------
-require_once __DIR__ . '/core/Response.php';
-require_once __DIR__ . '/core/Router.php';
+require_once __DIR__ . '/api/core/Response.php';
+require_once __DIR__ . '/api/core/Router.php';
 
 // --------- โหลด controller ----------
-require_once __DIR__ . '/controllers/CategoryController.php';
-require_once __DIR__ . '/controllers/SupplierController.php';
-require_once __DIR__ . '/controllers/ProductController.php';
+require_once __DIR__ . '/api/controllers/CategoryController.php';
+require_once __DIR__ . '/api/controllers/SupplierController.php';
+require_once __DIR__ . '/api/controllers/ProductController.php';
 
 try {
     $categoryController = new CategoryController($conn);
