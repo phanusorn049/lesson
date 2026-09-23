@@ -2,16 +2,16 @@
     admin off
 }
 
-:$PORT {
+:{$PORT} {
     root * .
     
-    # ถ้าขึ้นต้นด้วย /api ให้ rewrite Request ทั้งหมดส่งไปให้ api/index.php ประมวลผล
+    # ส่ง Request ขึ้นต้นด้วย /api ไปที่ api/index.php
     handle /api/* {
         rewrite * /api/index.php
         php_fastcgi localhost:9000
     }
 
-    # สำหรับไฟล์ Static เช่น index.html, js, css
+    # บริการ Static Files (เช่น index.html, js, css)
     handle {
         file_server
     }
