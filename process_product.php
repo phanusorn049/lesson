@@ -38,19 +38,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // 2. เพิ่มและแก้ไขข้อมูล (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $productName = trim($_POST['ProductName'] ?? '');
-    $supplierId  = trim($_POST['SupplierID'] ?? '');
-    $catId       = trim($_POST['CatID'] ?? '');
-    $unit        = trim($_POST['Unit'] ?? '');
-    $price       = trim($_POST['Price'] ?? '');
-    $productID   = trim($_POST['ProductID'] ?? '');
+    // รับค่าจาก $_POST หรือ php://input (กรณี JS ส่งมาเป็น JSON)
+    $input = $_POST;
+    if (empty($input)) {
+        $raw = file_get_contents('php://input');
+        $input = json_decode($raw, true) ?? [];
+    }
 
-    // Server-Side Validation
-    if (empty($productName) || empty($supplierId) || empty($catId) || empty($unit) || $price === '') {
+    $productName = trim($input['ProductName'] ?? '');
+    $supplierId  = trim($input['SupplierID'] ?? '');
+    $catId       = trim($input['CatID'] ?? '');
+    $unit        = trim($input['Unit'] ?? '');
+    $price       = trim($input['Price'] ?? 0);
+    $productID   = trim($input['ProductID'] ?? '');
+    $action      = $action ?: ($input['action'] ?? '');
+
+    // เช็คเฉพาะชื่อสินค้า
+    if (empty($productName)) {
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'message' => 'กรุณากรอกข้อมูลให้ครบถ้วนทุกช่อง (ชื่อสินค้า, ผู้จัดจำหน่าย, หมวดหมู่, หน่วยนับ และราคา)'
+            'message' => 'กรุณากรอกชื่อสินค้า'
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -68,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 ':productName' => $productName,
-                ':supplierId'  => $supplierId,
-                ':catId'       => $catId,
+                ':supplierId'  => $supplierId ?: null,
+                ':catId'       => $catId ?: null,
                 ':unit'        => $unit,
                 ':price'       => $price,
                 ':productID'   => $productID
@@ -84,15 +92,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
 
         } else {
-            // บันทึกรายการใหม่ (action === 'insert' หรือกดบันทึกทั่วไป)
+            // เพิ่มสินค้าใหม่
             $sql = "INSERT INTO tb_products (c_ProductName, i_SupplierID, i_CategoryID, c_Unit, i_Price)
                     VALUES (:productName, :supplierId, :catId, :unit, :price)";
 
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 ':productName' => $productName,
-                ':supplierId'  => $supplierId,
-                ':catId'       => $catId,
+                ':supplierId'  => $supplierId ?: null,
+                ':catId'       => $catId ?: null,
                 ':unit'        => $unit,
                 ':price'       => $price
             ]);
@@ -110,12 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(500);
         echo json_encode([
             'success' => false,
-            'message' => 'ไม่สามารถบันทึกข้อมูลลงฐานข้อมูลได้: ' . $e->getMessage()
+            'message' => 'ไม่สามารถบันทึกข้อมูลได้: ' . $e->getMessage()
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 }
 
-// หากส่ง Method อื่นที่ไม่ใช่ GET หรือ POST
 http_response_code(405);
 echo json_encode(['success' => false, 'message' => 'Method Not Allowed'], JSON_UNESCAPED_UNICODE);
