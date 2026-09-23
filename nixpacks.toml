@@ -5,4 +5,4 @@ providers = ["php"]
 nixPkgs = ["php82", "php82Extensions.pdo_mysql", "php82Extensions.mysqli", "caddy"]
 
 [start]
-cmd = "php-fpm82 -F -d listen=/app/php-fpm.sock & sleep 1 && caddy run --config /app/Caddyfile --adapter caddyfile"
+cmd = "php-fpm82 -D && caddy run --config /app/Caddyfile --adapter caddyfile"
