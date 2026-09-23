@@ -147,7 +147,8 @@
             
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังดึงข้อมูลสินค้า...</td></tr>';
 
-            fetch(`api/products?q=${encodeURIComponent(keyword)}`)
+            // แก้ไข Path เติม / ข้างหน้าเพื่อเรียก Absolute URL
+            fetch(`/api/products?q=${encodeURIComponent(keyword)}`)
                 .then(res => res.json())
                 .then(res => {
                     if (res.data && res.data.length > 0) {
@@ -203,7 +204,8 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            fetch(`api/products/${id}`, {
+            // แก้ไข Path เติม / ข้างหน้าเช่นกัน
+            fetch(`/api/products/${id}`, {
                 method: 'DELETE'
             })
             .then(res => res.json())
