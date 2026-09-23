@@ -85,14 +85,14 @@
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <button type="button" id="btnSearch" class="btn btn-primary w-100" onclick="fetchProducts()">
+                        <button type="button" id="btnSearch" class="btn btn-primary w-100" onclick="fetchProducts(1)">
                             <i class="bi bi-search me-1"></i> ค้นหา
                         </button>
                     </div>
                 </div>
 
                 <!-- Data Table -->
-                <div class="table-responsive border">
+                <div class="table-responsive border mb-3">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
@@ -102,7 +102,7 @@
                                 <th>ผู้จัดจำหน่าย</th>
                                 <th>ราคา</th>
                                 <th>หน่วย</th>
-                                <th class="text-center" style="width: 100px;">จัดการ</th>
+                                <th class="text-center" style="width: 120px;">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="productTableBody">
@@ -112,9 +112,70 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination Component -->
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                    <div id="paginationInfo" class="text-muted small"></div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="paginationControls"></ul>
+                    </nav>
+                </div>
+
             </div>
         </div>
 
+    </div>
+
+    <!-- MODAL EDIT PRODUCT -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>แก้ไขข้อมูลสินค้า</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editProductForm" onsubmit="saveEditProduct(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit_ProductID">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">ชื่อสินค้า <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_ProductName" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">หมวดหมู่</label>
+                                <select class="form-select" id="edit_CatID">
+                                    <option value="">-- เลือกหมวดหมู่ --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">ผู้จัดจำหน่าย</label>
+                                <select class="form-select" id="edit_SupplierID">
+                                    <option value="">-- เลือกผู้จัดจำหน่าย --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">ราคา <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control" id="edit_Price" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">หน่วยนับ</label>
+                                <input type="text" class="form-control" id="edit_Unit">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> บันทึกการแก้ไข</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript Libraries -->
@@ -123,6 +184,10 @@
 
     <!-- Application Script -->
     <script>
+        let currentPage = 1;
+        const pageLimit = 10;
+        let editModalInstance = null;
+
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -132,32 +197,37 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            fetchProducts();
+            editModalInstance = new bootstrap.Modal(document.getElementById('editModal'));
+            
+            fetchProducts(1);
+            loadDropdownOptions();
 
             // Enter Key Search Trigger
             document.getElementById('searchInput').addEventListener('keyup', (e) => {
-                if (e.key === 'Enter') fetchProducts();
+                if (e.key === 'Enter') fetchProducts(1);
             });
         });
 
-        // ดึงรายการสินค้า (แก้ไข URL ตัด / ข้างหน้าออกเหลือ api/products)
-        function fetchProducts() {
+        // ดึงข้อมูลสินค้าแบบแบ่งหน้า
+        function fetchProducts(page = 1) {
+            currentPage = page;
             const keyword = document.getElementById('searchInput').value.trim();
             const tbody = document.getElementById('productTableBody');
             
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังดึงข้อมูลสินค้า...</td></tr>';
 
-            fetch(`api/products?q=${encodeURIComponent(keyword)}`)
+            fetch(`api/products?q=${encodeURIComponent(keyword)}&page=${page}&limit=${pageLimit}`)
                 .then(res => {
-                    if (!res.ok) {
-                        throw new Error(`HTTP Status: ${res.status}`);
-                    }
+                    if (!res.ok) throw new Error(`HTTP Status: ${res.status}`);
                     return res.json();
                 })
                 .then(res => {
-                    if (res.data && res.data.length > 0) {
+                    const data = res.data?.items || res.data || [];
+                    const pagination = res.data?.pagination || null;
+
+                    if (data.length > 0) {
                         tbody.innerHTML = '';
-                        res.data.forEach(item => {
+                        data.forEach(item => {
                             const tr = document.createElement('tr');
                             tr.innerHTML = `
                                 <td><span class="badge bg-secondary">#${item.ProductID}</span></td>
@@ -167,6 +237,9 @@
                                 <td class="text-success fw-bold">฿${parseFloat(item.Price || 0).toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
                                 <td>${escapeHtml(item.Unit || '-')}</td>
                                 <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-warning me-1" title="แก้ไข" onclick="openEditModal(${item.ProductID})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-outline-danger" title="ลบ" onclick="confirmDeleteProduct(${item.ProductID}, '${escapeHtml(item.ProductName)}')">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -174,14 +247,130 @@
                             `;
                             tbody.appendChild(tr);
                         });
+
+                        if (pagination) {
+                            renderPaginationControls(pagination);
+                        }
                     } else {
                         tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-inbox me-2"></i>ไม่พบข้อมูลสินค้า</td></tr>';
+                        document.getElementById('paginationControls').innerHTML = '';
+                        document.getElementById('paginationInfo').innerText = '';
                     }
                 })
                 .catch(err => {
                     console.error('Fetch error:', err);
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
                 });
+        }
+
+        // วาดปุ่ม Pagination 1, 2, 3...
+        function renderPaginationControls(pagination) {
+            const controls = document.getElementById('paginationControls');
+            const info = document.getElementById('paginationInfo');
+            
+            info.innerText = `แสดงหน้า ${pagination.current_page} จากทั้งหมด ${pagination.total_pages} หน้า (รวม ${pagination.total_items} รายการ)`;
+
+            let html = '';
+
+            // ปุ่ม ก่อนหน้า
+            html += `<li class="page-item ${pagination.current_page <= 1 ? 'disabled' : ''}">
+                        <button class="page-link" onclick="fetchProducts(${pagination.current_page - 1})">ก่อนหน้า</button>
+                     </li>`;
+
+            // เลขหน้า 1, 2, 3...
+            for (let i = 1; i <= pagination.total_pages; i++) {
+                html += `<li class="page-item ${i === pagination.current_page ? 'active' : ''}">
+                            <button class="page-link" onclick="fetchProducts(${i})">${i}</button>
+                         </li>`;
+            }
+
+            // ปุ่ม ถัดไป
+            html += `<li class="page-item ${pagination.current_page >= pagination.total_pages ? 'disabled' : ''}">
+                        <button class="page-link" onclick="fetchProducts(${pagination.current_page + 1})">ถัดไป</button>
+                     </li>`;
+
+            controls.innerHTML = html;
+        }
+
+        // โหลด Dropdown Categories/Suppliers สำหรับ Modal
+        async function loadDropdownOptions() {
+            try {
+                const [catRes, supRes] = await Promise.all([
+                    fetch('process_product.php?action=get_categories').then(r => r.json()),
+                    fetch('process_product.php?action=get_suppliers').then(r => r.json())
+                ]);
+
+                if (catRes.success) {
+                    const catSelect = document.getElementById('edit_CatID');
+                    catRes.data.forEach(c => {
+                        catSelect.innerHTML += `<option value="${c.i_CategoryID}">${escapeHtml(c.c_CategoryName)}</option>`;
+                    });
+                }
+
+                if (supRes.success) {
+                    const supSelect = document.getElementById('edit_SupplierID');
+                    supRes.data.forEach(s => {
+                        supSelect.innerHTML += `<option value="${s.i_SupplierID}">${escapeHtml(s.c_SupplierName)}</option>`;
+                    });
+                }
+            } catch (err) {
+                console.error("Error loading dropdowns:", err);
+            }
+        }
+
+        // เปิด Modal และดึงข้อมูลมาแสดงเตรียมแก้ไข
+        function openEditModal(id) {
+            fetch(`api/products/${id}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.data) {
+                        const p = res.data;
+                        document.getElementById('edit_ProductID').value = p.ProductID;
+                        document.getElementById('edit_ProductName').value = p.ProductName;
+                        document.getElementById('edit_CatID').value = p.CatID || '';
+                        document.getElementById('edit_SupplierID').value = p.SupplierID || '';
+                        document.getElementById('edit_Price').value = p.Price;
+                        document.getElementById('edit_Unit').value = p.Unit || '';
+
+                        editModalInstance.show();
+                    }
+                })
+                .catch(err => {
+                    Swal.fire('ข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลสินค้าได้', 'error');
+                });
+        }
+
+        // บันทึกการแก้ไข (PUT /api/products/{id})
+        function saveEditProduct(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('edit_ProductID').value;
+            const payload = {
+                ProductName: document.getElementById('edit_ProductName').value,
+                CatID: document.getElementById('edit_CatID').value,
+                SupplierID: document.getElementById('edit_SupplierID').value,
+                Price: document.getElementById('edit_Price').value,
+                Unit: document.getElementById('edit_Unit').value
+            };
+
+            fetch(`api/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success || res.status) {
+                    editModalInstance.hide();
+                    Toast.fire({ icon: 'success', title: 'อัปเดตข้อมูลสินค้าเรียบร้อยแล้ว' });
+                    fetchProducts(currentPage);
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', res.message || 'ไม่สามารถแก้ไขได้', 'error');
+                }
+            })
+            .catch(err => {
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+            });
         }
 
         // ลบสินค้า
@@ -209,38 +398,18 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            // แก้ไข URL ลบสินค้า ตัด / ข้างหน้าออกเหลือ api/products/...
-            fetch(`api/products/${id}`, {
-                method: 'DELETE'
-            })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP status ${res.status}`);
-                }
-                return res.json();
-            })
+            fetch(`api/products/${id}`, { method: 'DELETE' })
+            .then(res => res.json())
             .then(res => {
                 if (res.status || res.success) {
-                    Toast.fire({
-                        icon: 'success',
-                        title: 'ลบรายการสินค้าเรียบร้อยแล้ว'
-                    });
-                    fetchProducts();
+                    Toast.fire({ icon: 'success', title: 'ลบรายการสินค้าเรียบร้อยแล้ว' });
+                    fetchProducts(currentPage);
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'ลบสินค้าล้มเหลว',
-                        text: res.message || 'ไม่สามารถลบสินค้านี้ได้'
-                    });
+                    Swal.fire({ icon: 'error', title: 'ลบสินค้าล้มเหลว', text: res.message || 'ไม่สามารถลบสินค้านี้ได้' });
                 }
             })
             .catch(err => {
-                console.error('Delete error:', err);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อลบข้อมูลได้'
-                });
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อลบข้อมูลได้' });
             });
         }
 
