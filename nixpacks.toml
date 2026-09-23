@@ -2,4 +2,4 @@
 providers = ["php"]
 
 [phase.setup]
-nixPkgs = ["php82", "php82Extensions.pdo_mysql", "php82Extensions.mysqli", "php82Extensions.mbstring", "caddy"]
+nixPkgs = ["php82", "php82Extensions.pdo_mysql", "php82Extensions.mysqli", "caddy"]
