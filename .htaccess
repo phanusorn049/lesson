@@ -1,10 +1,10 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # ถ้าเรียกไฟล์หรือโฟลเดอร์ที่มีอยู่จริง (เช่น products.html, js, css) ให้เปิดตรงๆ
+    # 1. ถ้าเรียกไฟล์หรือโฟลเดอร์ที่มีอยู่จริง (เช่น products.html, js, css) ให้เปิดตรงๆ
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
 
-    # ส่ง Request อื่นๆ ทั้งหมดมาที่ api/index.php
-    RewriteRule ^(.*)$ api/index.php [QSA,L]
+    # 2. เฉพาะ Request ที่ขึ้นต้นด้วย /api/ หรือ api/ เท่านั้น ให้ส่งไปที่ api/index.php
+    RewriteRule ^api/(.*)$ api/index.php [QSA,L]
 </IfModule>
