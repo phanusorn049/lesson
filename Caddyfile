@@ -5,9 +5,8 @@
 :8080 {
     root * .
 
-    # บังคับให้วิ่งผ่าน 127.0.0.1 เพื่อแก้ปัญหา Connection refused
-    php_fastcgi 127.0.0.1:9000
+    # ใช้ Unix Socket ที่ PHP-FPM เตรียมไว้ให้โดยอัตโนมัติ
+    php_fastcgi unix//var/run/php-fpm.sock
 
-    # บริการ Static Files ทั่วไป
     file_server
 }
