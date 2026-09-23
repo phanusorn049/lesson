@@ -11,7 +11,19 @@ class Response
     {
         http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+        
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+        // **เพิ่มการเช็กตรงนี้ เพื่อดูว่า json_encode มีปัญหาหรือไม่**
+        if ($json === false) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'JSON Encode Error: ' . json_last_error_msg()
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        echo $json;
         exit;
     }
 
