@@ -147,7 +147,7 @@
             
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังดึงข้อมูลสินค้า...</td></tr>';
 
-            // แก้ไข Path เติม / ข้างหน้าเพื่อเรียก Absolute URL
+            // ใช้ Relative Path (ไม่มี / นำหน้า)
             fetch(`api/products?q=${encodeURIComponent(keyword)}`)
                 .then(res => res.json())
                 .then(res => {
@@ -204,13 +204,13 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            // แก้ไข Path เติม / ข้างหน้าเช่นกัน
-            fetch(`/api/products/${id}`, {
+            // แก้ไข Path ถอด / ด้านหน้าออกแล้ว
+            fetch(`api/products/${id}`, {
                 method: 'DELETE'
             })
             .then(res => res.json())
             .then(res => {
-                if (res.success || res.status === 'success') {
+                if (res.status || res.success) {
                     Toast.fire({
                         icon: 'success',
                         title: 'ลบรายการสินค้าเรียบร้อยแล้ว'
