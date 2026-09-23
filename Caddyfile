@@ -2,16 +2,12 @@
     admin off
 }
 
-:{$PORT} {
+:${PORT} {
     root * .
 
-    # ส่ง Request ขึ้นต้นด้วย /api ไปที่ PHP-FPM โดยตรง
-    handle /api/* {
-        php_fastcgi localhost:9000
-    }
+    # ถ้าเป็นไฟล์หรือโฟลเดอร์ที่มีอยู่จริง และลงท้ายด้วย .php ให้ส่งให้ PHP-FPM ประมวลผล
+    php_fastcgi localhost:9000
 
-    # บริการ Static Files ทั่วไป
-    handle {
-        file_server
-    }
+    # บริการ Static Files ทั่วไป (HTML, CSS, JS, รูปภาพ)
+    file_server
 }
