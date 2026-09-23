@@ -1,2 +1,0 @@
-[phases.build]
-cmds = ["echo 'extension=pdo_mysql.so' >> /opt/render/php/etc/php.ini"] # หรือปรับตามคำสั่งของระบบ
