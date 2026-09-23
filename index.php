@@ -31,6 +31,12 @@ try {
 
     $router = new Router();
 
+    // ลงทะเบียน Route สำหรับ redirect หน้าแรกไปยัง products.html
+    $router->get('/', function() {
+        header('Location: /products.html');
+        exit;
+    });
+
     // ลงทะเบียน Route ปกติ
     $router->get('/suppliers', [$supplierController, 'index']);
     $router->get('/suppliers/{id}', [$supplierController, 'show']);
