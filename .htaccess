@@ -6,5 +6,5 @@
     RewriteCond %{REQUEST_FILENAME} !-d
 
     # ส่ง Request อื่นๆ ทั้งหมดมาที่ index.php
-    RewriteRule ^ index.php [QSA,L]
+   RewriteRule ^ api/index.php [QSA,L]
 </IfModule>
