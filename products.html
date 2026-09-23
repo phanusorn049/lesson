@@ -147,9 +147,13 @@
             
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>กำลังดึงข้อมูลสินค้า...</td></tr>';
 
-            // ปรับแก้ Path เป็น api/products
             fetch(`api/products?q=${encodeURIComponent(keyword)}`)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP Status: ${res.status}`);
+                    }
+                    return res.json();
+                })
                 .then(res => {
                     if (res.data && res.data.length > 0) {
                         tbody.innerHTML = '';
@@ -160,8 +164,8 @@
                                 <td class="fw-medium">${escapeHtml(item.ProductName)}</td>
                                 <td><small class="text-muted">${escapeHtml(item.CategoryName || '-')}</small></td>
                                 <td><small class="text-muted">${escapeHtml(item.SupplierName || '-')}</small></td>
-                                <td class="text-success fw-bold">฿${parseFloat(item.Price).toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
-                                <td>${escapeHtml(item.Unit)}</td>
+                                <td class="text-success fw-bold">฿${parseFloat(item.Price || 0).toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
+                                <td>${escapeHtml(item.Unit || '-')}</td>
                                 <td class="text-center">
                                     <button class="btn btn-sm btn-outline-danger" title="ลบ" onclick="confirmDeleteProduct(${item.ProductID}, '${escapeHtml(item.ProductName)}')">
                                         <i class="bi bi-trash"></i>
@@ -174,7 +178,8 @@
                         tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-inbox me-2"></i>ไม่พบข้อมูลสินค้า</td></tr>';
                     }
                 })
-                .catch(() => {
+                .catch(err => {
+                    console.error('Fetch error:', err);
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
                 });
         }
@@ -204,11 +209,15 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            // ปรับแก้ Path เป็น api/products/${id}
             fetch(`api/products/${id}`, {
                 method: 'DELETE'
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP status ${res.status}`);
+                }
+                return res.json();
+            })
             .then(res => {
                 if (res.status || res.success) {
                     Toast.fire({
@@ -224,7 +233,8 @@
                     });
                 }
             })
-            .catch(() => {
+            .catch(err => {
+                console.error('Delete error:', err);
                 Swal.fire({
                     icon: 'error',
                     title: 'เกิดข้อผิดพลาด',
