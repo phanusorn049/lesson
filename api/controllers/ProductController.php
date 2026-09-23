@@ -42,7 +42,9 @@ class ProductController
             }
 
             $stmt->execute();
-            Response::success($stmt->fetchAll(PDO::FETCH_ASSOC));
+            $products = $stmt->fetchAll();
+
+            Response::success($products);
         } catch (PDOException $e) {
             Response::error('ไม่สามารถดึงข้อมูลสินค้าได้: ' . $e->getMessage(), 500);
         }
@@ -70,7 +72,7 @@ class ProductController
             $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
             $stmt->execute();
 
-            $product = $stmt->fetch(PDO::FETCH_ASSOC);
+            $product = $stmt->fetch();
             if (!$product) {
                 Response::notFound('ไม่พบข้อมูลสินค้ารหัสนี้');
                 return;
@@ -78,7 +80,7 @@ class ProductController
 
             Response::success($product);
         } catch (PDOException $e) {
-            Response::error('ไม่สามารถดึงข้อมูลสินค้าได้', 500);
+            Response::error('ไม่สามารถดึงข้อมูลสินค้าได้: ' . $e->getMessage(), 500);
         }
     }
 
@@ -88,16 +90,21 @@ class ProductController
         try {
             $data = json_decode(file_get_contents('php://input'), true);
 
+            if (!$data) {
+                Response::error('ข้อมูลไม่ถูกต้อง', 400);
+                return;
+            }
+
             $sql = "INSERT INTO tb_products (c_ProductName, i_SupplierID, i_CategoryID, c_Unit, i_Price) 
                     VALUES (:name, :supplier, :cat, :unit, :price)";
 
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
-                ':name'     => $data['ProductName'],
-                ':supplier' => $data['SupplierID'],
-                ':cat'      => $data['CatID'],
-                ':unit'     => $data['Unit'],
-                ':price'    => $data['Price']
+                ':name'     => $data['ProductName'] ?? '',
+                ':supplier' => $data['SupplierID'] ?? null,
+                ':cat'      => $data['CatID'] ?? null,
+                ':unit'     => $data['Unit'] ?? '',
+                ':price'    => $data['Price'] ?? 0
             ]);
 
             Response::success(['id' => $this->conn->lastInsertId()], 'เพิ่มสินค้าสำเร็จ');
@@ -112,6 +119,11 @@ class ProductController
         try {
             $data = json_decode(file_get_contents('php://input'), true);
 
+            if (!$data) {
+                Response::error('ข้อมูลไม่ถูกต้อง', 400);
+                return;
+            }
+
             $sql = "UPDATE tb_products 
                     SET c_ProductName = :name, 
                         i_SupplierID = :supplier, 
@@ -122,12 +134,12 @@ class ProductController
 
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
-                ':id'       => $id,
-                ':name'     => $data['ProductName'],
-                ':supplier' => $data['SupplierID'],
-                ':cat'      => $data['CatID'],
-                ':unit'     => $data['Unit'],
-                ':price'    => $data['Price']
+                ':id'       => (int)$id,
+                ':name'     => $data['ProductName'] ?? '',
+                ':supplier' => $data['SupplierID'] ?? null,
+                ':cat'      => $data['CatID'] ?? null,
+                ':unit'     => $data['Unit'] ?? '',
+                ':price'    => $data['Price'] ?? 0
             ]);
 
             Response::success(null, 'แก้ไขข้อมูลสินค้าสำเร็จ');
@@ -141,11 +153,11 @@ class ProductController
     {
         try {
             $stmt = $this->conn->prepare("DELETE FROM tb_products WHERE i_ProductID = :id");
-            $stmt->execute([':id' => $id]);
+            $stmt->execute([':id' => (int)$id]);
 
             Response::success(null, 'ลบข้อมูลสินค้าเรียบร้อยแล้ว');
         } catch (PDOException $e) {
-            Response::error('ไม่สามารถลบข้อมูลสินค้าได้', 500);
+            Response::error('ไม่สามารถลบข้อมูลสินค้าได้: ' . $e->getMessage(), 500);
         }
     }
 }
