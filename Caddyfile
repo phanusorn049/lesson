@@ -5,8 +5,8 @@
 :8080 {
     root * .
 
-    # ส่งไฟล์ .php ไปให้ PHP-FPM ประมวลผล
-    php_fastcgi localhost:9000
+    # บังคับให้วิ่งผ่าน 127.0.0.1 เพื่อแก้ปัญหา Connection refused
+    php_fastcgi 127.0.0.1:9000
 
     # บริการ Static Files ทั่วไป
     file_server
